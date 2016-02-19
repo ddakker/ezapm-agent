@@ -1,0 +1,65 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+ext {
+    javaVersion 				= '1.7'
+    javaEncoding 				= 'UTF-8'
+}
+
+sourceCompatibility = javaVersion
+
+[compileJava, compileTestJava]*.options*.encoding = javaEncoding
+
+version = '1.0.0-SNAPSHOT'
+jar {
+    manifest {
+        attributes 	'Implementation-Title': archivesBaseName,
+        			'Implementation-Desc': 'vertx-web, vertx-core, vertx-auth-common',
+                    'Implementation-Version': project.version,
+                    //'CI-Build-Num': project.hasProperty('buildNum') ? project.getProperty('buildNum') : '-1',
+                    //'Build-SVN-Version': getRevision(),
+                    'System-JDK': "${System.getProperty('java.version')} (${System.getProperty('java.specification.vendor')})",
+                    'Compile-JDK-Version': javaVersion,
+                    //'Gradle-Version': gradleVersion,
+                    'Created-By': 'ddakker@ezwel.com',
+                    'Create-Date': new Date().format('yyyy-MM-dd HH:mm:ss').toString()
+    }
+}
+repositories {
+	maven { url mavenRepositoryUrl + "/content/groups/public/" }
+}
+
+List loggerSlf4jAndLogback = [
+    'ch.qos.logback:logback-core:1.1.2',
+    'ch.qos.logback:logback-classic:1.1.2',
+    'org.slf4j:slf4j-api:1.7.7',
+    'org.slf4j:jcl-over-slf4j:1.7.7',
+    'org.slf4j:log4j-over-slf4j:1.7.7',
+    'org.codehaus.janino:janino:2.7.8'
+]
+
+configurations {
+	provided
+}
+sourceSets {
+	main { compileClasspath += configurations.provided }
+}
+
+dependencies {
+	compile loggerSlf4jAndLogback
+	//provided loggerSlf4jAndLogback
+}
+
+test {
+    systemProperties 'property': 'value'
+}
+
+uploadArchives {
+    repositories {
+       flatDir {
+           dirs 'repos'
+       }
+    }
+}
+
