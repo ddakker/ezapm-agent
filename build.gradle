@@ -5,6 +5,7 @@ apply plugin: 'idea'
 ext {
     javaVersion 				= '1.7'
     javaEncoding 				= 'UTF-8'
+    gradleVersion               = '2.10'
 }
 
 sourceCompatibility = javaVersion
@@ -17,6 +18,9 @@ jar {
         attributes 	'Implementation-Title': archivesBaseName,
         			'Implementation-Desc': 'vertx-web, vertx-core, vertx-auth-common',
                     'Implementation-Version': project.version,
+                    'Premain-Class': 'org.ninedragon.ezapm.agent.AgentMain',
+                    'Agent-Class': 'org.ninedragon.ezapm.agent.AgentMain',
+                    'Can-Redefine-Classes': true,
                     //'CI-Build-Num': project.hasProperty('buildNum') ? project.getProperty('buildNum') : '-1',
                     //'Build-SVN-Version': getRevision(),
                     'System-JDK': "${System.getProperty('java.version')} (${System.getProperty('java.specification.vendor')})",
@@ -28,6 +32,7 @@ jar {
 }
 repositories {
 	maven { url mavenRepositoryUrl + "/content/groups/public/" }
+    mavenCentral()
 }
 
 List loggerSlf4jAndLogback = [
@@ -48,6 +53,7 @@ sourceSets {
 
 dependencies {
 	compile loggerSlf4jAndLogback
+
 	//provided loggerSlf4jAndLogback
 }
 
@@ -63,3 +69,43 @@ uploadArchives {
     }
 }
 
+/*
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+        //maven { url "https://oss.jfrog.org/artifactory/oss-snapshot-local/" }
+    }
+    dependencies {
+        classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
+
+    }
+}
+
+apply plugin: 'eu.appsatori.fatjar'
+fatJar {
+    // 불필요한 파일 미포함 설정
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.SF'
+    manifest {
+        attributes 	'Implementation-Title': archivesBaseName,
+                'Implementation-Version': version,
+                'Premain-Class': 'org.ninedragon.ezapm.agent.AgentMain',
+                'Agent-Class': 'org.ninedragon.ezapm.agent.AgentMain',
+                'Can-Redefine-Classes': true,
+                //'Build-SVN-Version': getRevision(),
+                'System-JDK': "${System.getProperty('java.version')} (${System.getProperty('java.specification.vendor')})",
+                'Compile-JDK-Version': javaVersion,
+                //'Gradle-Version': GradleVersion.current().getVersion(),
+                'Created-By': 'ddakker@gmail.com',
+                'Create-Date': new Date().format('yyyy-MM-dd HH:mm:ss').toString()
+
+
+    }
+}
+*/
+
+task wrapper(type: Wrapper) {
+    distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
+}
