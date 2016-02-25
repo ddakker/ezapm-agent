@@ -1,19 +1,20 @@
-package org.ninedragon.ezapm.send.netty.handler;
+package org.ninedragon.ezapm.agent.send.netty.handler;
 
 import org.ninedragon.extlib.io.netty.buffer.ByteBuf;
 import org.ninedragon.extlib.io.netty.buffer.Unpooled;
 import org.ninedragon.extlib.io.netty.channel.ChannelHandlerContext;
 import org.ninedragon.extlib.io.netty.channel.ChannelInboundHandlerAdapter;
-import org.ninedragon.ezapm.send.netty.NettyClient;
+import org.ninedragon.ezapm.agent.send.netty.NettyClient;
 
 /**
  * Created by ddakker on 2016-02-19.
  */
-public class ChannelHandler extends ChannelInboundHandlerAdapter {
+public class NettyClientChannelHandler extends ChannelInboundHandlerAdapter {
+    public static ChannelHandlerContext ctx = null;
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        String msgStr = "접속";
+        String msgStr = "접속 t: " + System.currentTimeMillis();
         ByteBuf message;
 
         //message = Unpooled.buffer(EchoClient.MESSAGE_SIZE);
@@ -28,7 +29,11 @@ public class ChannelHandler extends ChannelInboundHandlerAdapter {
         //ctx.writeAndFlush("dsfsdf");
         System.out.println(msgStr);
 
-        NettyClient.ctx = ctx;
+        if (NettyClientChannelHandler.ctx != null) {
+            System.out.println("send: " + NettyClientChannelHandler.ctx.isRemoved());
+        }
+
+        NettyClientChannelHandler.ctx = ctx;
     }
 
 
