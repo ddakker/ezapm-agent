@@ -29,11 +29,13 @@ public class ChannelHandler extends ChannelInboundHandlerAdapter {
         System.out.println(msgStr);
 
         NettyClient.ctx = ctx;
+        System.out.println("ctx.isRemoved(): " + ctx.isRemoved());
     }
 
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        System.err.println("연결 종료");
         System.err.println(cause);
         ctx.close();
     }
