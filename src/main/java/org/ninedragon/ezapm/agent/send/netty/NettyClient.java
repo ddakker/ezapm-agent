@@ -1,4 +1,4 @@
-package org.ninedragon.ezapm.send.netty;
+package org.ninedragon.ezapm.agent.send.netty;
 
 import org.ninedragon.extlib.io.netty.bootstrap.Bootstrap;
 import org.ninedragon.extlib.io.netty.buffer.ByteBuf;
@@ -7,25 +7,23 @@ import org.ninedragon.extlib.io.netty.channel.*;
 import org.ninedragon.extlib.io.netty.channel.nio.NioEventLoopGroup;
 import org.ninedragon.extlib.io.netty.channel.socket.SocketChannel;
 import org.ninedragon.extlib.io.netty.channel.socket.nio.NioSocketChannel;
-import org.ninedragon.ezapm.send.netty.handler.ChannelHandler2;
+import org.ninedragon.ezapm.agent.send.netty.handler.NettyClientChannelHandler;
 
 /**
  * Created by ddakker on 2016-02-19.
  */
-public class NettyClient2 {
-    public static ChannelHandlerContext ctx = null;
+public class NettyClient {
 
     static {
-        start();
         check();
     }
 
     public static void start() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
+        //new Thread(new Runnable() {
+        //    @Override
+        //    public void run() {
                 String host = "127.0.0.1";
-                int port = 9998;
+                int port = 9999;
 
                 EventLoopGroup workerGroup = new NioEventLoopGroup();
                 try {
@@ -36,13 +34,13 @@ public class NettyClient2 {
                     b.handler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new ChannelHandler2());
+                            ch.pipeline().addLast(new NettyClientChannelHandler());
                         }
                     });
 
                     // Start the client.
-                    //ChannelFuture f = b.connect(host, port).sync(); // (5)
-                    ChannelFuture f = b.connect(host, port); // (5)
+                    ChannelFuture f = b.connect(host, port).sync(); // (5)
+                    //ChannelFuture f = b.connect(host, port); // (5)
 
                     // Wait until the connection is closed.
                     f.channel().closeFuture().sync();
@@ -52,8 +50,8 @@ public class NettyClient2 {
                 } finally {
                     workerGroup.shutdownGracefully();
                 }
-            }
-        }).start();
+            //}
+        //}).start();
         System.out.println("connect end");
     }
 
@@ -62,11 +60,15 @@ public class NettyClient2 {
             @Override
             public void run() {
                 while (true) {
-                    try {Thread.sleep(2000);}catch(Exception e){}
+                    try {
+                        Thread.sleep(5000);
+                    } catch (Exception e) {
+                    }
+                    System.out.println("재 접속 체크");
 
-                    if (ctx == null || ctx.isRemoved()) {
-                        System.out.println("재 접속");
+                    if (NettyClientChannelHandler.ctx == null || NettyClientChannelHandler.ctx.isRemoved()) {
                         try {
+                            System.out.println("재 접속 시도");
                             start();
                         } catch (Exception e) {
                             System.err.println("재 접속 실패: " + e.getClass() + ", message: " + e.getMessage());
@@ -78,7 +80,7 @@ public class NettyClient2 {
     }
 
     public static void send(String message) {
-        if (ctx == null || ctx.isRemoved()) {
+        if (NettyClientChannelHandler.ctx == null || NettyClientChannelHandler.ctx.isRemoved()) {
             System.err.println("누락: " + message);
         } else {
             System.out.println("send");
@@ -95,8 +97,8 @@ public class NettyClient2 {
 
             // 메시지를 쓴 후 플러쉬합니다.
             try {
-                System.out.println("ctx.isRemoved(): " + ctx.isRemoved());
-                ctx.writeAndFlush(messageBuf);
+                System.out.println("ctx.isRemoved(): " + NettyClientChannelHandler.ctx.isRemoved());
+                NettyClientChannelHandler.ctx.writeAndFlush(messageBuf);
             System.out.println("발송: " + message);
             } catch (Exception e) {
                 System.err.println("발송 실패: " + e.getClass() + ", message: " + e.getMessage());

@@ -35,12 +35,12 @@ public class AgentMain {
     }
 
     public final void start(boolean isRequest, boolean isMBean, boolean isLog) {
-        System.out.println("====== DAK-APM-AGENT  Service Started. =======");
+        System.out.println("====== EZAPM-AGENT  Service Started. =======");
         System.out.println("| isRequest\t: " + isRequest);
         System.out.println("| isMBean\t: " + isMBean);
         System.out.println("| isDebug\t: " + isDebug);
         System.out.println("| isLog\t\t: " + isLog);
-        System.out.println("| author\t: ddakker@ezwel.com");
+        System.out.println("| author\t: ddakker@naver.com");
         System.out.println("==============================================");
 
         if (isRequest) {

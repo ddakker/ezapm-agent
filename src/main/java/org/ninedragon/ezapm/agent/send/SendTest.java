@@ -1,6 +1,6 @@
-package org.ninedragon.ezapm.send;
+package org.ninedragon.ezapm.agent.send;
 
-import org.ninedragon.ezapm.send.netty.NettyClient;
+import org.ninedragon.ezapm.agent.send.netty.NettyClient;
 
 /**
  * Created by ddakker on 2016-02-19.
