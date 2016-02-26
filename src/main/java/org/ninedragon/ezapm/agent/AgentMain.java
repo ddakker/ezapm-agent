@@ -1,6 +1,7 @@
 package org.ninedragon.ezapm.agent;
 
 import org.ninedragon.ezapm.agent.send.netty.NettyClient;
+import org.ninedragon.ezapm.agent.send.netty.handler.NettyClientChannelHandler;
 import org.ninedragon.ezapm.agent.timer.MBeanTimer;
 import org.ninedragon.ezapm.agent.transformer.ServletTransformer;
 
@@ -14,105 +15,123 @@ import java.util.Timer;
  * Created by ddakker on 2016-02-19.
  */
 public class AgentMain {
-    private static Instrumentation instrumentation;
-
-    Timer timer = new Timer("EZAPM TIMER", true);
-
-    public static boolean isDebug 	= false;
+    Timer timer = new Timer("ddakker Agent Timer", true);
+    Instrumentation instrumentation;
+    static AgentMain agentMain;
     public static boolean isExec 	= false;
-
-    public static void premain(String args, Instrumentation inst) throws Exception {
-        if (AgentMain.isExec == true) {
-            return;
-        }
-        if (AgentMain.instrumentation != null) {
-            return;
-        }
-        /*String pathConf = System.getProperty("ezapm.conf");
-        if (pathConf == null) {
-            System.setProperty("ezapm.conf", args);
-        }
-        new Thread(Logger.initializer).start();
-        Logger.println("args: " + args);
-        intro(args);*/
+    public static boolean isDebug 	= false;
 
 
-        /*boolean isRequest = args != null && args.contains("isRequest=true");
-        boolean isMBean = args != null && args.contains("isMBean=true");
-        boolean isLog = args != null && args.contains("isLog=true");
-        isDebug = args != null && args.contains("isDebug=true");*/
-
-        /*String serverNm     = Conf.getProperty("server.nm");
-        boolean isRequest   = Boolean.parseBoolean(Conf.getProperty("is.request"));
-        boolean isMBean     = Boolean.parseBoolean(Conf.getProperty("is.mbean"));
-        boolean isLog       = Boolean.parseBoolean(Conf.getProperty("is.log"));
-        isDebug             = Boolean.parseBoolean(Conf.getProperty("is.debug"));*/
-        //String serverNm     = Conf.getProperty("server.nm");
-        boolean isRequest   = true;
-        boolean isMBean     = false;
-        boolean isLog       = false;
-        isDebug             = false;
-
-        NettyClient.init();
-
-        AgentMain.instrumentation = inst;
-
-        //instrumentation.addTransformer(new TomcatTransformer());
-        AgentMain agentMain = new AgentMain(instrumentation);
-        agentMain.start(isRequest, isMBean, isLog);
-
-        AgentMain.isExec				= true;
-    }
-
-    private static void intro(String conf) {
-        try {
-            System.setProperty("scouter.enabled", "true");
-            String nativeName = AgentMain.class.getName().replace('.', '/') + ".class";
-            ClassLoader cl = AgentMain.class.getClassLoader();
-            if (cl == null) {
-                System.out.println("loaded by system classloader ");
-                System.out.println("1: " + ClassLoader.getSystemClassLoader());
-                System.out.println("2: " + ClassLoader.getSystemClassLoader().getResource(nativeName));
-            } else {
-                System.out.println("loaded by app classloader ");
-                System.out.println("3: " + cl.getResource(nativeName));
+    public static void premain(String args, Instrumentation instrumentation) throws Exception {
+        if (AgentMain.isExec == false) {
+            String pathConf = System.getProperty("ezapm.conf");
+            if (pathConf == null) {
+                System.setProperty("ezapm.conf", args);
             }
-        } catch (Throwable t) {
+
+            System.out.println("NettyClient.c: " + NettyClient.c);
+
+            //new Thread(Logger.initializer).start();
+            Thread nettyClientThread = new Thread(NettyClient.initializer);
+            nettyClientThread.setDaemon(true);
+            nettyClientThread.start();
+
+            System.out.println("NettyClient.ctx: " + NettyClient.ctx);
+            if (NettyClient.ctx != null) {
+                NettyClient.ctx.close();
+            }
+
+            boolean isRequest   = Boolean.parseBoolean(Conf.getProperty("is.request"));
+            boolean isMBean     = Boolean.parseBoolean(Conf.getProperty("is.mbean"));
+            boolean isLog       = Boolean.parseBoolean(Conf.getProperty("is.log"));
+            isDebug             = Boolean.parseBoolean(Conf.getProperty("is.debug"));
+
+            //instrumentation.addTransformer(new TomcatTransformer());
+            agentMain = new AgentMain(instrumentation);
+            agentMain.start(isRequest, isMBean, isLog);
         }
 
-
-
+        isExec				= true;
     }
+
+	/*public static void agentmain(String args, Instrumentation inst) throws Exception {
+		System.out.println("--- MonitorAgent agentmain()");
+		premain(args, inst);
+	}*/
 
     public AgentMain(Instrumentation instrumentation) {
-        AgentMain.instrumentation = instrumentation;
+        this.instrumentation = instrumentation;
+
+
     }
 
     public final void start(boolean isRequest, boolean isMBean, boolean isLog) {
-        System.out.println("====== EZAPM-AGENT  Service Started. =======");
+        System.out.println("== Ezwel-Monitor [agent]  Service Started. ===");
         System.out.println("| isRequest\t: " + isRequest);
         System.out.println("| isMBean\t: " + isMBean);
         System.out.println("| isDebug\t: " + isDebug);
         System.out.println("| isLog\t\t: " + isLog);
-        System.out.println("| author\t: ddakker@naver.com");
+        System.out.println("| author\t: ddakker@ezwel.com");
         System.out.println("==============================================");
 
-
+        System.out.println("============================================== 1");
         if (isRequest) {
-            AgentMain.instrumentation.addTransformer(new ServletTransformer());
+            System.out.println("============================================== 2");
+            setupTransformers(instrumentation);
+            System.out.println("============================================== 3");
         }
         if (isMBean) {
-            //setupTimer();
+            setupTimer();
         }
         if (isLog) {
-            //setupLogWatch();
+            setupLogWatch();
         }
-        System.setProperty("is.start.ezapm", "true");
+        System.out.println("============================================== Exit");
+    }
+
+    private void setupTransformers(Instrumentation paramInstrumentation) {
+        this.instrumentation.addTransformer(new ServletTransformer());
     }
 
     private void setupTimer() {
-        System.out.println("startTimer");
         MBeanTimer mBeanTimer = new MBeanTimer();
         timer.scheduleAtFixedRate(mBeanTimer, 5000, 5000);
+    }
+
+    private void setupLogWatch() {
+        //LogWatch logWatch = new LogWatch();
+        //Thread thread = new Thread(logWatch);
+        //thread.setDaemon(true);
+        //thread.start();
+    }
+
+	/*public static void start() {
+		new java.util.Timer().schedule(new com.ezwel.monitor.agent.JobTimer(), 5000, 1000 * 5);
+		System.out.println("--- MonitorAgent start()");
+		if (timer == null) {
+			timer = new Timer();
+			System.out.println("timer: " + timer);
+			jobTimer = new JobTimer();
+			timer.schedule(jobTimer, 1000*10, 1000 * 5);	// 10초 후 부터 5초마다
+		}
+		System.out.println("--- MonitorAgent start() end timer: " + timer);
+	}
+
+	public static void destory() {
+		System.out.println("--- MonitorAgent destory() timer: " + timer);
+		if (jobTimer != null) {
+			jobTimer.cancel();
+			jobTimer = null;
+		}
+		if (timer != null) {
+			timer.cancel();
+			timer.purge();
+			timer = null;
+		}
+		System.out.println("--- MonitorAgent destory() end timer: " + timer);
+	}*/
+
+    public static void main(String[] args) {
+        //start();
     }
 }

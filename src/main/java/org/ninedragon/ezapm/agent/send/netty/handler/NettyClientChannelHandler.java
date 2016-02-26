@@ -10,11 +10,10 @@ import org.ninedragon.ezapm.agent.send.netty.NettyClient;
  * Created by ddakker on 2016-02-19.
  */
 public class NettyClientChannelHandler extends ChannelInboundHandlerAdapter {
-    public static ChannelHandlerContext ctx = null;
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        String msgStr = "접속 t: " + System.currentTimeMillis();
+        String msgStr = "FIRST CONNECT t: " + System.currentTimeMillis();
         ByteBuf message;
 
         //message = Unpooled.buffer(EchoClient.MESSAGE_SIZE);
@@ -29,11 +28,12 @@ public class NettyClientChannelHandler extends ChannelInboundHandlerAdapter {
         //ctx.writeAndFlush("dsfsdf");
         System.out.println(msgStr);
 
-        if (NettyClientChannelHandler.ctx != null) {
-            System.out.println("send: " + NettyClientChannelHandler.ctx.isRemoved());
+        NettyClient.ctx = ctx;
+        if (NettyClient.ctx != null) {
+            System.out.println("FIRST CONNECT ctx: " + NettyClient.ctx);
+            System.out.println("FIRST CONNECT ctx: " + NettyClient.ctx.isRemoved());
         }
-
-        NettyClientChannelHandler.ctx = ctx;
+        //ctx.close();
     }
 
 
@@ -42,4 +42,10 @@ public class NettyClientChannelHandler extends ChannelInboundHandlerAdapter {
         System.err.println(cause);
         ctx.close();
     }
+
+    /*@Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        System.out.println("msg: " + msg);
+        ctx.fireChannelRead(msg);
+    }*/
 }

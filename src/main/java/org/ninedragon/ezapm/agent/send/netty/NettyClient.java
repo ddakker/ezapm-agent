@@ -13,15 +13,162 @@ import org.ninedragon.ezapm.agent.send.netty.handler.NettyClientChannelHandler;
  * Created by ddakker on 2016-02-19.
  */
 public class NettyClient {
+    public static ChannelHandlerContext ctx = null;
 
     static {
-        check();
+        //check();
     }
 
-    public static void start() {
-        //new Thread(new Runnable() {
-        //    @Override
-        //    public void run() {
+    public static void connectMsg(String grp, String message) {
+        //String host = "127.0.0.1";
+        String host = "10.10.10.178";
+        int port = 9999;
+
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        try {
+            Bootstrap b = new Bootstrap(); // (1)
+            b.group(workerGroup); // (2)
+            b.channel(NioSocketChannel.class); // (3)
+            b.option(ChannelOption.SO_KEEPALIVE, true); // (4)
+            b.handler(new ChannelInitializer<SocketChannel>() {
+                @Override
+                public void initChannel(SocketChannel ch) throws Exception {
+                    ch.pipeline().addLast(new NettyClientChannelHandler());
+                }
+            });
+
+            // Start the client.
+            //ChannelFuture f = b.connect(host, port).sync(); // (5)
+            //ChannelFuture f = b.connect(host, port); // (5)
+
+            // Wait until the connection is closed.
+            //f.channel().closeFuture().sync();
+            //f.channel().closeFuture();
+
+            c = b.connect(host, port).sync().channel();
+
+
+            message = "{grp: '" + grp + "', data: " + message + "}";
+            System.out.println("NettyClient.ctx1: " + NettyClient.ctx);
+            if (c == null) {
+                System.err.println("누락 NULL: " + message);
+            } else if (!c.isOpen()) {
+                System.err.println("누락 Close Call: " + message);
+            } else {
+                System.out.println("send");
+
+
+                ByteBuf messageBuf;
+
+                //message = Unpooled.buffer(EchoClient.MESSAGE_SIZE);
+                messageBuf = Unpooled.buffer();
+                // 예제로 사용할 바이트 배열을 만듭니다.
+                byte[] str = (message + "\n").getBytes();
+                // 예제 바이트 배열을 메시지에 씁니다.
+                messageBuf.writeBytes(str);
+
+                // 메시지를 쓴 후 플러쉬합니다.
+                try {
+                    c.writeAndFlush(messageBuf);
+                    System.out.println("발송: " + message);
+                } catch (Exception e) {
+                    System.err.println("발송 실패: " + e.getClass() + ", message: " + e.getMessage());
+                }
+
+            }
+
+
+
+
+            c.close();
+            c.disconnect();
+
+        } catch (Exception e) {
+            System.err.println("접속 실패: " + e.getClass() + ", message: " + e.getMessage());
+        } finally {
+            workerGroup.shutdownGracefully();
+        }
+    }
+
+
+    public static Runnable initializer = new Runnable() {
+        @Override
+        public void run() {
+            //String host = "127.0.0.1";
+            String host = "10.10.10.178";
+            int port = 9999;
+
+            EventLoopGroup workerGroup = new NioEventLoopGroup();
+            try {
+                Bootstrap b = new Bootstrap(); // (1)
+                b.group(workerGroup); // (2)
+                b.channel(NioSocketChannel.class); // (3)
+                b.option(ChannelOption.SO_KEEPALIVE, true); // (4)
+                b.handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    public void initChannel(SocketChannel ch) throws Exception {
+                        ch.pipeline().addLast(new NettyClientChannelHandler());
+                    }
+                });
+
+                // Start the client.
+                //ChannelFuture f = b.connect(host, port).sync(); // (5)
+                //ChannelFuture f = b.connect(host, port); // (5)
+
+                // Wait until the connection is closed.
+                //f.channel().closeFuture().sync();
+                //f.channel().closeFuture();
+
+                c = b.connect(host, port).sync().channel();
+                c.closeFuture().sync();
+
+            } catch (Exception e) {
+                System.err.println("접속 실패: " + e.getClass() + ", message: " + e.getMessage());
+            } finally {
+                workerGroup.shutdownGracefully();
+            }
+        }
+    };
+    public static Channel c = null;
+
+    public static void send(String grp, String message) {
+        long l = System.currentTimeMillis();
+
+        message = "{grp: '" + grp + "', data: " + message + "}";
+        System.out.println("NettyClient.ctx1: " + NettyClient.ctx);
+        if (c == null) {
+            System.err.println("누락 NULL: " + message);
+        } else if (!c.isOpen()) {
+            System.err.println("누락 Close Call: " + message);
+        } else {
+            System.out.println("send");
+
+
+            ByteBuf messageBuf;
+
+            //message = Unpooled.buffer(EchoClient.MESSAGE_SIZE);
+            messageBuf = Unpooled.buffer();
+            // 예제로 사용할 바이트 배열을 만듭니다.
+            byte[] str = (message + "\n").getBytes();
+            // 예제 바이트 배열을 메시지에 씁니다.
+            messageBuf.writeBytes(str);
+
+            // 메시지를 쓴 후 플러쉬합니다.
+            try {
+                c.writeAndFlush(messageBuf);
+                System.out.println("발송: " + message);
+            } catch (Exception e) {
+                System.err.println("발송 실패: " + e.getClass() + ", message: " + e.getMessage());
+            }
+        }
+
+        System.out.println("발송 ts: " + (System.currentTimeMillis()-l));
+    }
+
+    /*public static void start() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
                 String host = "127.0.0.1";
                 int port = 9999;
 
@@ -44,19 +191,20 @@ public class NettyClient {
 
                     // Wait until the connection is closed.
                     f.channel().closeFuture().sync();
+                    //f.channel().closeFuture();
 
                 } catch (Exception e) {
                     System.err.println("접속 실패: " + e.getClass() + ", message: " + e.getMessage());
                 } finally {
                     workerGroup.shutdownGracefully();
                 }
-            //}
-        //}).start();
+            }
+        }).start();
         System.out.println("connect end");
     }
 
     public static void check() {
-        new Thread(new Runnable() {
+        Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (true) {
@@ -64,9 +212,12 @@ public class NettyClient {
                         Thread.sleep(5000);
                     } catch (Exception e) {
                     }
-                    System.out.println("재 접속 체크");
+                    System.out.println("재 접속 체크 NettyClient.ctx: " + NettyClient.ctx);
+                    if (NettyClient.ctx != null) {
+                        System.out.println("재 접속 체크 NettyClient.ctx.isRemoved(): " + NettyClient.ctx.isRemoved());
+                    }
 
-                    if (NettyClientChannelHandler.ctx == null || NettyClientChannelHandler.ctx.isRemoved()) {
+                    if (NettyClient.ctx == null || NettyClient.ctx.isRemoved()) {
                         try {
                             System.out.println("재 접속 시도");
                             start();
@@ -76,12 +227,23 @@ public class NettyClient {
                     }
                 }
             }
-        }).start();
-    }
+        });
+        t.setDaemon(true);
+        t.start();
+    }*/
 
-    public static void send(String message) {
-        if (NettyClientChannelHandler.ctx == null || NettyClientChannelHandler.ctx.isRemoved()) {
-            System.err.println("누락: " + message);
+    public static String GRP_WAS_MEM = "grp_was_mem";
+    public static String GRP_WAS_REQ = "grp_was_req";
+
+    /*public static void send(String grp, String message) {
+        message = "{grp: '" + grp + "', data: " + message + "}";
+        System.out.println("NettyClient.ctx1: " + NettyClient.ctx);
+        if (NettyClient.ctx == null) {
+            System.err.println("누락 NULL: " + message);
+        } else if (NettyClient.ctx.isRemoved()) {
+            System.err.println("누락 Close Call: " + message);
+            NettyClient.ctx.close();
+            NettyClient.ctx.disconnect();
         } else {
             System.out.println("send");
 
@@ -97,14 +259,14 @@ public class NettyClient {
 
             // 메시지를 쓴 후 플러쉬합니다.
             try {
-                System.out.println("ctx.isRemoved(): " + NettyClientChannelHandler.ctx.isRemoved());
-                NettyClientChannelHandler.ctx.writeAndFlush(messageBuf);
+                System.out.println("ctx.isRemoved(): " + NettyClient.ctx.isRemoved());
+                NettyClient.ctx.writeAndFlush(messageBuf);
             System.out.println("발송: " + message);
             } catch (Exception e) {
                 System.err.println("발송 실패: " + e.getClass() + ", message: " + e.getMessage());
             }
         }
-    }
+    }*/
 
     public static void init() {
         System.out.println("init");
