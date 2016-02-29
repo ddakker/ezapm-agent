@@ -14,7 +14,6 @@ public class SendTest {
 
         NettyClient.send("df", "Asdfasdf");
         Thread.sleep(2000);
-        System.out.println(NettyClient.ctx.isRemoved());
         NettyClient.send("df", "Asdfasdf");
         NettyClient.send("df", "Asdfasdf");
         Thread.sleep(1000);

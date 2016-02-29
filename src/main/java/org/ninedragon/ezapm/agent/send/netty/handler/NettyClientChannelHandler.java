@@ -28,11 +28,6 @@ public class NettyClientChannelHandler extends ChannelInboundHandlerAdapter {
         //ctx.writeAndFlush("dsfsdf");
         System.out.println(msgStr);
 
-        NettyClient.ctx = ctx;
-        if (NettyClient.ctx != null) {
-            System.out.println("FIRST CONNECT ctx: " + NettyClient.ctx);
-            System.out.println("FIRST CONNECT ctx: " + NettyClient.ctx.isRemoved());
-        }
         //ctx.close();
     }
 

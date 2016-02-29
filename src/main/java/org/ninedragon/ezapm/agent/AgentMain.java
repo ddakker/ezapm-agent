@@ -1,14 +1,10 @@
 package org.ninedragon.ezapm.agent;
 
 import org.ninedragon.ezapm.agent.send.netty.NettyClient;
-import org.ninedragon.ezapm.agent.send.netty.handler.NettyClientChannelHandler;
 import org.ninedragon.ezapm.agent.timer.MBeanTimer;
 import org.ninedragon.ezapm.agent.transformer.ServletTransformer;
 
-import java.io.*;
 import java.lang.instrument.Instrumentation;
-import java.net.InetAddress;
-import java.util.Properties;
 import java.util.Timer;
 
 /**
@@ -22,6 +18,7 @@ public class AgentMain {
     public static boolean isDebug 	= false;
 
 
+
     public static void premain(String args, Instrumentation instrumentation) throws Exception {
         if (AgentMain.isExec == false) {
             String pathConf = System.getProperty("ezapm.conf");
@@ -32,14 +29,17 @@ public class AgentMain {
             System.out.println("NettyClient.c: " + NettyClient.c);
 
             //new Thread(Logger.initializer).start();
-            Thread nettyClientThread = new Thread(NettyClient.initializer);
+
+            /*AgentMain.nettyClientThread = new Thread(NettyClient.initializer);
             nettyClientThread.setDaemon(true);
             nettyClientThread.start();
+            threads.add(nettyClientThread);*/
+            NettyClient.startAndCheck();
 
-            System.out.println("NettyClient.ctx: " + NettyClient.ctx);
+            /*System.out.println("NettyClient.ctx: " + NettyClient.ctx);
             if (NettyClient.ctx != null) {
                 NettyClient.ctx.close();
-            }
+            }*/
 
             boolean isRequest   = Boolean.parseBoolean(Conf.getProperty("is.request"));
             boolean isMBean     = Boolean.parseBoolean(Conf.getProperty("is.mbean"));
@@ -49,6 +49,8 @@ public class AgentMain {
             //instrumentation.addTransformer(new TomcatTransformer());
             agentMain = new AgentMain(instrumentation);
             agentMain.start(isRequest, isMBean, isLog);
+
+
         }
 
         isExec				= true;
@@ -62,10 +64,13 @@ public class AgentMain {
     public AgentMain(Instrumentation instrumentation) {
         this.instrumentation = instrumentation;
 
+        System.out.println("cl: " + System.getProperty("java.class.path"));
 
     }
 
     public final void start(boolean isRequest, boolean isMBean, boolean isLog) {
+
+
         System.out.println("== Ezwel-Monitor [agent]  Service Started. ===");
         System.out.println("| isRequest\t: " + isRequest);
         System.out.println("| isMBean\t: " + isMBean);
@@ -87,6 +92,17 @@ public class AgentMain {
             setupLogWatch();
         }
         System.out.println("============================================== Exit");
+
+        //Runtime.getRuntime().addShutdownHook(new Test());
+        final Runnable stop = new Runnable() {
+            @Override
+            public void run() {
+                agentMain.shutdown();
+            }
+        };
+        Thread thread = new Thread(stop, "stopHookThread");
+        Runtime.getRuntime().addShutdownHook(thread);
+
     }
 
     private void setupTransformers(Instrumentation paramInstrumentation) {
@@ -103,6 +119,18 @@ public class AgentMain {
         //Thread thread = new Thread(logWatch);
         //thread.setDaemon(true);
         //thread.start();
+    }
+
+    public void shutdown() {
+        System.out.println("shutdown NettyClient.nettyClientThread: " + NettyClient.nettyClientThread);
+        if (NettyClient.nettyClientThread != null) {
+            NettyClient.nettyClientThread.interrupt();
+        }
+        /*System.out.println("agent shutdown() S agentMain: " + agentMain);
+        System.out.println("agent shutdown() AgentMain.nettyClientThread: " + AgentMain.nettyClientThread + ", threads.size: " + threads.size());
+        System.out.println("agent shutdown() agentMain: " + agentMain + ", agents.size: " + agents.size());
+        AgentMain.nettyClientThread.interrupt();
+        System.out.println("agent shutdown() E");*/
     }
 
 	/*public static void start() {
@@ -134,4 +162,11 @@ public class AgentMain {
     public static void main(String[] args) {
         //start();
     }
+
+
+
+
+
+
+
 }

@@ -7,19 +7,61 @@ import org.ninedragon.extlib.io.netty.channel.*;
 import org.ninedragon.extlib.io.netty.channel.nio.NioEventLoopGroup;
 import org.ninedragon.extlib.io.netty.channel.socket.SocketChannel;
 import org.ninedragon.extlib.io.netty.channel.socket.nio.NioSocketChannel;
+import org.ninedragon.ezapm.agent.AgentMain;
 import org.ninedragon.ezapm.agent.send.netty.handler.NettyClientChannelHandler;
+
+import javax.management.*;
+import javax.management.openmbean.CompositeData;
+import java.lang.management.ManagementFactory;
 
 /**
  * Created by ddakker on 2016-02-19.
  */
 public class NettyClient {
-    public static ChannelHandlerContext ctx = null;
+    public static Channel c = null;
 
     static {
-        //check();
+        //startAndCheck();
     }
 
-    public static void connectMsg(String grp, String message) {
+    public static Thread nettyClientThread = null;
+
+    public static void startAndCheck() {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(2000);
+                    } catch (Exception e) {
+                    }
+
+                    try {
+                        ObjectName om = new ObjectName("Catalina:type=Server");
+                        MBeanServer connection = ManagementFactory.getPlatformMBeanServer();
+                        Object obj = connection.getAttribute(om, "stateName");
+
+                        if ("STARTED".equals(obj.toString()) && (c == null || !c.isOpen())) {
+                            if (c != null) System.out.println("c.isOpen()): " + c.isOpen());
+                            nettyClientThread = new Thread(NettyClient.initializer);
+                            System.out.println("startup NettyClient.nettyClientThread: " + NettyClient.nettyClientThread);
+                            nettyClientThread.setDaemon(true);
+                            nettyClientThread.start();
+                        }
+                    } catch (Exception e) {
+                        nettyClientThread.interrupt();
+                        break;
+                    }
+
+
+                }
+            }
+        });
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /*public static void connectMsg(String grp, String message) {
         //String host = "127.0.0.1";
         String host = "10.10.10.178";
         int port = 9999;
@@ -88,7 +130,7 @@ public class NettyClient {
         } finally {
             workerGroup.shutdownGracefully();
         }
-    }
+    }*/
 
 
     public static Runnable initializer = new Runnable() {
@@ -120,22 +162,38 @@ public class NettyClient {
                 //f.channel().closeFuture();
 
                 c = b.connect(host, port).sync().channel();
-                c.closeFuture().sync();
+                //c.closeFuture().sync();
+                //while (true) {
+                //while (true) {
+                while (!Thread.currentThread().isInterrupted()) {
+                    Thread.sleep(500);
 
-            } catch (Exception e) {
+                    /*if (c == null) {
+                        throw new InterruptedException();
+                    }*/
+                }
+
+
+
+            } catch (InterruptedException e) {
+                // 예상했던 예외이므로 무시..
+                System.err.println("이래저래");
+                c.close();
+                c.disconnect();
+                c = null;
+            }  catch (Exception e) {
                 System.err.println("접속 실패: " + e.getClass() + ", message: " + e.getMessage());
             } finally {
                 workerGroup.shutdownGracefully();
             }
         }
     };
-    public static Channel c = null;
+
 
     public static void send(String grp, String message) {
         long l = System.currentTimeMillis();
 
         message = "{grp: '" + grp + "', data: " + message + "}";
-        System.out.println("NettyClient.ctx1: " + NettyClient.ctx);
         if (c == null) {
             System.err.println("누락 NULL: " + message);
         } else if (!c.isOpen()) {
