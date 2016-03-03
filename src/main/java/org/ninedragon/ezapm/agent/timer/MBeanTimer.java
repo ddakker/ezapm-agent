@@ -30,7 +30,7 @@ import java.util.TimerTask;
 
             long nonHeapUsed = Long.parseLong(((CompositeData)attrValue).get("used").toString());
 
-            String msg = "{serverNm: '', heapUsedPercent: '" + heapUsedPercent + "', heapMax: '" + max + "', heapUsed: '" + used + "', nonHeapUsed: '" + nonHeapUsed + "', time: '" + System.currentTimeMillis() + "'}";
+            String msg = "{serverNm: '" + System.getProperty("agent.server.nm") + "', heapUsedPercent: '" + heapUsedPercent + "', heapMax: '" + max + "', heapUsed: '" + used + "', nonHeapUsed: '" + nonHeapUsed + "', time: '" + System.currentTimeMillis() + "'}";
             Logger.println("msg: " + msg);
 
             NettyClient.send(NettyClient.GRP_WAS_MEM, msg);

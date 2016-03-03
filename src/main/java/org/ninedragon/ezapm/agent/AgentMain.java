@@ -46,6 +46,9 @@ public class AgentMain {
             boolean isLog       = Boolean.parseBoolean(Conf.getProperty("is.log"));
             isDebug             = Boolean.parseBoolean(Conf.getProperty("is.debug"));
 
+            System.setProperty("agent.server.nm", Conf.getProperty("server.nm"));
+
+
             //instrumentation.addTransformer(new TomcatTransformer());
             agentMain = new AgentMain(instrumentation);
             agentMain.start(isRequest, isMBean, isLog);
