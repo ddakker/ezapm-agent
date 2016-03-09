@@ -88,45 +88,113 @@ public class ServletTransformer implements ClassFileTransformer {
             //methods[i].insertBefore("System.out.println(\"==== tomcat start\"); new java.util.Timer().schedule(new com.ezwel.monitor.agent.JobTimer(), 5000, 1000 * 5); System.out.println(\"==== tomcat start end\");");
             //methods[i].insertBefore("System.out.println(\"==== test 1: \" + ((javax.servlet.http.HttpServletRequest)$1).getRequestURI());");
             try {
+                //method.insertAt(0, "long startMs = System.currentTimeMillis();");
+                //method.addLocalVariable("startMs", CtClass.longType);
+                //method.addLocalVariable("ip", CtClass.charType);
+                //method.insertBefore("startMs = System.currentTimeMillis();");
+                //method.insertBefore("ip = \"aaa\";");
+                //method.insertBefore("startMs = System.currentTimeMillis(); ip = \"aaa\";");
+
+
+                /*method.insertBefore("{"
+                        + "startMs = System.currentTimeMillis();"
+                        + "System.out.println(\"startMs: \" + startMs);"
+                        + "ip = $1.getRemoteAddr();"
+                        //+ "javax.servlet.http.HttpServletRequest request = ((javax.servlet.http.HttpServletRequest)$1);"
+                        //+ "System.out.println(\"request: \" + request);"
+                        //+ "String uri = request.getRequestURI();"
+                        + "String jvmRoute = System.getProperty(\"agent.server.nm\");"
+                        //+ "String sessionId = request.getSession().getId();"
+                        //+ "long threadId = Thread.currentThread().getId();"
+                        //+ "String ip = request.getRemoteAddr();"
+                        //+ "Object ip = $1.getRemoteAddr();"
+                        //+ "System.out.println(jvmRoute);"
+
+                        + "org.ninedragon.ezapm.agent.send.netty.NettyClient.send(org.ninedragon.ezapm.agent.send.netty.NettyClient.GRP_WAS_REQ, \"{"
+                        +           "\\\"serverNm\\\": \\\"\" + jvmRoute + \"\\\" "
+                        +       "}\");"
+                        + "}");*/
+
+
+                /*method.insertBefore("{"
+                        + "startMs = System.currentTimeMillis();"
+                        + "System.out.println(\"startMs: \" + startMs);"
+                        + "ip = $1.getRemoteAddr();"
+                        //+ "javax.servlet.http.HttpServletRequest request = ((javax.servlet.http.HttpServletRequest)$1);"
+                        //+ "System.out.println(\"request: \" + request);"
+                        //+ "String uri = request.getRequestURI();"
+                        + "String jvmRoute = System.getProperty(\"agent.server.nm\");"
+                        //+ "String sessionId = request.getSession().getId();"
+                        //+ "long threadId = Thread.currentThread().getId();"
+                        //+ "String ip = request.getRemoteAddr();"
+                        //+ "Object ip = $1.getRemoteAddr();"
+                        //+ "System.out.println(jvmRoute);"
+
+                        + "org.ninedragon.ezapm.agent.send.netty.NettyClient.send(org.ninedragon.ezapm.agent.send.netty.NettyClient.GRP_WAS_REQ, \"{"
+                        +           "\\\"serverNm\\\": \\\"\" + jvmRoute + \"\\\" "
+                        +       "}\");"
+                        + "}");*/
                 method.insertBefore(""
+                        + "long stTime = System.currentTimeMillis();"
+                        //+ "System.out.println(stTime);"
                         + "javax.servlet.http.HttpServletRequest request = ((javax.servlet.http.HttpServletRequest)$1);"
                         //+ "org.apache.catalina.connector.Request request = $1;"
+                        + "request.setAttribute(\"__ezapm_agent_stTime__\", new Long(stTime));"
                         + "String uri = request.getRequestURI();"
                         + "String jvmRoute = System.getProperty(\"agent.server.nm\");"
                         + "String sessionId = request.getSession().getId();"
                         + "long threadId = Thread.currentThread().getId();"
                         + "String ip = request.getRemoteAddr();"
+                        + "System.out.println(jvmRoute);"
                         + "org.ninedragon.ezapm.agent.send.netty.NettyClient.send(org.ninedragon.ezapm.agent.send.netty.NettyClient.GRP_WAS_REQ, \"{"
-                        +       "server: '\" + jvmRoute + \"' "
-                        +       ", threadId: '\" + threadId + \"' "
-                        +       ", sessionId: '\" + sessionId + \"' "
-                        +       ", uri: '\" + uri + \"' "
-                        +       ", ip: '\" + ip + \"' "
-                        +       ", stTime: '\" + System.currentTimeMillis() + \"' "
+                        +       "\\\"serverNm\\\": \\\"\" + jvmRoute + \"\\\" "
+                        +       ", \\\"threadId\\\": \\\"\" + threadId + \"\\\" "
+                        +       ", \\\"sessionId\\\": \\\"\" + sessionId + \"\\\" "
+                        +       ", \\\"uri\\\": \\\"\" + uri + \"\\\" "
+                        +       ", \\\"ip\\\": \\\"\" + ip + \"\\\" "
+                        +       ", \\\"stTime\\\": \" + stTime + \" "
                         + "}\");"
                 );
+                //method.insertAfter("{final long endMs = System.currentTimeMillis();" + "System.out.println(\"Executed in ms: \" + (endMs-startMs));}");
 
-                method.insertAfter(""
+
+
+                method.insertAfter("{"
                         + "javax.servlet.http.HttpServletRequest request = ((javax.servlet.http.HttpServletRequest)$1);"
                         + "javax.servlet.http.HttpServletResponse response = ((javax.servlet.http.HttpServletResponse)$2);"
+                        + "Long edTime = new Long(System.currentTimeMillis());"
+                        + "Long stTime = (Long) request.getAttribute(\"__ezapm_agent_stTime__\");"
+                        //+ "long stTime = (_stTime==null?0:_stTime);"
+                        //+ "Long resTime = edTime-stTime;"
+                        //+ "if (_stTime != null) { resTime = (edTime-_stTime); }"
+                        //+ "System.out.println(endMs);"
+                        //+ "System.out.println(resTime);"
                         //+ "org.apache.catalina.connector.Request request = $1;"
                         //+ "org.apache.catalina.connector.Response response = $2;"
+                        //+ "System.out.println(\"end _stTime: \" + _stTime);"
+                        //+ "System.out.println(\"end stTime: \" + stTime);"
+                        //+ "System.out.println(\"end getAttribute: \" + request.getAttribute(\"__ezapm_agent_stTime__\"));"
                         + "String uri = request.getRequestURI();"
                         + "int status = response.getStatus();"
                         + "System.out.println(status);"
                         + "String jvmRoute = System.getProperty(\"agent.server.nm\");"
+                        + "String sessionId = request.getSession().getId();"
                         + "long threadId = Thread.currentThread().getId();"
                         + "String ip = request.getRemoteAddr();"
                         + ""
                         + "org.ninedragon.ezapm.agent.send.netty.NettyClient.send(org.ninedragon.ezapm.agent.send.netty.NettyClient.GRP_WAS_REQ, \"{"
-                        +       "server: '\" + jvmRoute + \"' "
-                        +       ", threadId: '\" + threadId + \"' "
-                        +       ", uri: '\" + uri + \"' "
-                        +       ", ip: '\" + ip + \"' "
-                        +       ", edTime: '\" + System.currentTimeMillis() + \"' "
-                        +       ", status: '\" + status + \"' "
-                        +       "}\");"
-                );
+                        +       "\\\"serverNm\\\": \\\"\" + jvmRoute + \"\\\" "
+                        +       ", \\\"threadId\\\": \\\"\" + threadId + \"\\\" "
+                        +       ", \\\"sessionId\\\": \\\"\" + sessionId + \"\\\" "
+                        +       ", \\\"uri\\\": \\\"\" + uri + \"\\\" "
+                        +       ", \\\"ip\\\": \\\"\" + ip + \"\\\" "
+                        +       ", \\\"stTime\\\": \" + stTime + \" "
+                        //+       ", \\\"edTime\\\": \" + endMs + \" "
+                        +       ", \\\"edTime\\\": \" + edTime + \" "
+                        //+       ", \\\"resTime\\\": \" + (edTime-stTime) + \" "
+                        +       ", \\\"status\\\": \\\"\" + status + \"\\\" "
+                        + "     }\");"
+                        + "}");
             } catch (Exception e) {
                 System.err.println("Aa e: " + e);
             }

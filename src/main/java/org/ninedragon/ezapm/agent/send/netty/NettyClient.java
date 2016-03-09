@@ -8,6 +8,7 @@ import org.ninedragon.extlib.io.netty.channel.nio.NioEventLoopGroup;
 import org.ninedragon.extlib.io.netty.channel.socket.SocketChannel;
 import org.ninedragon.extlib.io.netty.channel.socket.nio.NioSocketChannel;
 import org.ninedragon.ezapm.agent.AgentMain;
+import org.ninedragon.ezapm.agent.Conf;
 import org.ninedragon.ezapm.agent.send.netty.handler.NettyClientChannelHandler;
 
 import javax.management.*;
@@ -32,16 +33,22 @@ public class NettyClient {
             public void run() {
                 while (true) {
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(5000);
                     } catch (Exception e) {
                     }
 
                     try {
-                        ObjectName om = new ObjectName("Catalina:type=Server");
+                        /*ObjectName om = new ObjectName("Catalina:type=Server");
                         MBeanServer connection = ManagementFactory.getPlatformMBeanServer();
                         Object obj = connection.getAttribute(om, "stateName");
+                        */
+                        ObjectName om = new ObjectName("java.lang:type=Memory");
+                        MBeanServer connection = ManagementFactory.getPlatformMBeanServer();
+                        Object obj = connection.getAttribute(om, "HeapMemoryUsage");
 
-                        if ("STARTED".equals(obj.toString()) && (c == null || !c.isOpen())) {
+                        System.out.println("obj: " + obj);
+
+                        if (obj != null && (c == null || !c.isOpen())) {
                             if (c != null) System.out.println("c.isOpen()): " + c.isOpen());
                             nettyClientThread = new Thread(NettyClient.initializer);
                             System.out.println("startup NettyClient.nettyClientThread: " + NettyClient.nettyClientThread);
@@ -59,6 +66,7 @@ public class NettyClient {
         });
         t.setDaemon(true);
         t.start();
+        System.out.println("startAndCheck() start");
     }
 
     /*public static void connectMsg(String grp, String message) {
@@ -137,7 +145,7 @@ public class NettyClient {
         @Override
         public void run() {
             //String host = "127.0.0.1";
-            String host = "10.10.10.178";
+            String host = Conf.getProperty("collector.ip");
             int port = 9999;
 
             EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -193,7 +201,7 @@ public class NettyClient {
     public static void send(String grp, String message) {
         long l = System.currentTimeMillis();
 
-        message = "{grp: '" + grp + "', data: " + message + "}";
+        message = "{\"grp\": \"" + grp + "\", \"data\": " + message + "}";
         if (c == null) {
             System.err.println("누락 NULL: " + message);
         } else if (!c.isOpen()) {
