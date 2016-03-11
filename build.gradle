@@ -26,7 +26,7 @@ jar {
                     'System-JDK': "${System.getProperty('java.version')} (${System.getProperty('java.specification.vendor')})",
                     'Compile-JDK-Version': javaVersion,
                     //'Gradle-Version': gradleVersion,
-                    'Created-By': 'ddakker@ezwel.com',
+                    'Created-By': 'ddakker@gmail.com',
                     'Create-Date': new Date().format('yyyy-MM-dd HH:mm:ss').toString()
     }
 }
